@@ -1,8 +1,9 @@
 import * as controller from "../controllers/reports.controller.js";
 import { verifyToken, isAdmin } from "../middlewares/auth.jwt.js";
+import express from "express";
 
 export default function(app) {
-    const router = require("express").Router();
+    const router = express.Router();
     router.use(verifyToken, isAdmin);
 
     router.get("/incidents", controller.getIncidentsReport);

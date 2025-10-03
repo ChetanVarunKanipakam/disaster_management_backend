@@ -1,9 +1,10 @@
 import * as controller from "../controllers/settings.controller.js";
 import { verifyToken, isAdmin } from "../middlewares/auth.jwt.js";
 import { logAction } from "../middlewares/audit.logger.js";
+import express from "express";
 
 export default function(app) {
-    const router = require("express").Router();
+    const router = express.Router();
     router.use(verifyToken, isAdmin);
 
     router.get("/", controller.getSettings);
