@@ -1,4 +1,7 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from 'express';
+import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import db from './models/index.js';
@@ -16,11 +19,19 @@ import announcementRoutes from './routes/announcement.routes.js';// New
 import auditLogRoutes from './routes/auditLog.routes.js';        // New
 import settingsRoutes from './routes/settings.routes.js';        // New
 // Replicate __dirname functionality
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.use(cors());
 
+// OR (more secure) allow only frontend origin:
+app.use(cors({
+  origin: 'http://localhost:5173',  // your React app URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+}));
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -29,7 +40,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Simple route for testing
-app.get('/', (req, res) => {
+app.get('/get', (req, res) => {
   res.json({ message: 'Welcome to the Community Disaster Response API (ESM Version).' });
 });
 
@@ -45,7 +56,7 @@ announcementRoutes(app);     // New
 auditLogRoutes(app);         // New
 settingsRoutes(app);         // New
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 4000;
 
 db.sequelize.sync({ alter: true }).then(() => { // Using alter: true during development helps apply model changes
   console.log('Database synced successfully.');

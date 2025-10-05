@@ -11,7 +11,6 @@ export default function(app) {
     router.get("/hotspots", controller.getHotspotsReport);
     
     // This export endpoint is separate as it might have different usage patterns
-    app.get("/api/admin/incidents/export", [verifyToken, isAdmin], controller.exportIncidentsToCsv);
 
     app.use('/api/admin/reports', router);
 };

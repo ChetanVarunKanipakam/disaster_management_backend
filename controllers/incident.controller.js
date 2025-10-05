@@ -14,7 +14,7 @@ export const createIncident = (req, res) => {
         type: 'Point', 
         coordinates: [req.body.longitude, req.body.latitude] // [lng, lat] format
     };
-
+    // console.log(req.body);
     Incident.create({
         title: req.body.title,
         description: req.body.description,
@@ -26,6 +26,7 @@ export const createIncident = (req, res) => {
     })
     .then(incident => {
         // Here you would trigger a WebSocket event: incident:new
+        // console.log(incident);
         res.status(201).send({ message: "Incident reported successfully!", incidentId: incident.id });
     })
     .catch(err => {
@@ -35,8 +36,9 @@ export const createIncident = (req, res) => {
 
 // Citizen/Volunteer: Get nearby incidents
 export const getNearbyIncidents = async (req, res) => {
-    const { lat, lon, radius = 10000, severity, type ,status} = req.query; // radius in meters
-
+    // const { lat, lon, radius = 10000, severity, type ,status} = req.query; // radius in meters
+    const { lat, lon, radius = 10000} = req.query; 
+    // console.log(req.query);
     if (!lat || !lon) {
         return res.status(400).send({ message: "Latitude and Longitude are required."});
     }
@@ -44,29 +46,36 @@ export const getNearbyIncidents = async (req, res) => {
     const location = sequelize.literal(`ST_GeomFromText('POINT(${lon} ${lat})')`);
     const distance = sequelize.fn('ST_DistanceSphere', sequelize.col('location'), location);
 
-    let whereClause = {
-        ...sequelize.where(distance, { [Op.lte]: parseInt(radius) })
-    };
+    const whereClause = [
+        sequelize.where(distance, { [Op.lte]: parseInt(radius) })
+    ];
 
-    if (!status) {
-        whereClause.status = { [Op.not]: 'RESOLVED' };
-    } else {
-        whereClause.status = status;
-    }
+// if (status) whereClause.push({ status });
+// if (severity) whereClause.push({ severity });
+// if (type) whereClause.push({ type });
 
-    if (severity) whereClause.severity = severity;
-    if (type) whereClause.type = type;
+
+
+
+    // if (!status) {
+    //     whereClause.status = { [Op.not]: 'RESOLVED' };
+    // } else {
+    //     whereClause.status = status;
+    // }
+
+    // if (severity) whereClause.severity = severity;
+    // if (type) whereClause.type = type;
     
     try {
         const incidents = await Incident.findAll({
-            attributes: {
-                include: [[distance, 'distance']]
-            },
-            where: whereClause,
+            attributes: { include: [[distance, 'distance']] },
+            where: { [Op.and]: whereClause },
             order: [['createdAt', 'DESC']]
         });
+        console.log(incidents);
         res.status(200).send(incidents);
     } catch (error) {
+        // console.error("error",error);
         res.status(500).send({ message: error.message });
     }
 };
@@ -80,8 +89,9 @@ export const getIncidentDetails = async (req, res) => {
                 { model: User, as: 'assignedVolunteer', attributes: ['id', 'name'] }
             ]
         });
+        console.log(incident.dataValues);
         if (!incident) return res.status(404).send({ message: "Incident not found." });
-        res.status(200).send(incident);
+        res.status(200).send(incident.dataValues);
     } catch (error) {
         res.status(500).send({ message: error.message });
     }

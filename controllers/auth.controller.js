@@ -30,8 +30,9 @@ export const signup = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
+    console.log(req.body);
     const user = await User.findOne({ where: { email: req.body.email } });
-
+    
     if (!user) {
       return res.status(404).send({ message: "User Not found." });
     }

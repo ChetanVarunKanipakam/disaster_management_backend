@@ -72,18 +72,3 @@ export const getHotspotsReport = async (req, res) => {
         res.status(500).send({ message: error.message });
     }
 };
-
-// GET /incidents/export
-export const exportIncidentsToCsv = async (req, res) => {
-    try {
-        const incidents = await Incident.findAll({ raw: true });
-        const json2csvParser = new Parser();
-        const csv = json2csvParser.parse(incidents);
-
-        res.header('Content-Type', 'text/csv');
-        res.attachment('incidents-report.csv');
-        res.status(200).send(csv);
-    } catch (error) {
-        res.status(500).send({ message: error.message });
-    }
-};

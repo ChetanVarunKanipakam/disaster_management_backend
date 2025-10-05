@@ -69,6 +69,7 @@ export const getAllVolunteers = async (req, res) => {
                 attributes: ['name', 'email', 'phone', 'isActive']
             }
         });
+        console.log(volunteers);
         res.status(200).send(volunteers);
     } catch (error) {
         res.status(500).send({ message: error.message });

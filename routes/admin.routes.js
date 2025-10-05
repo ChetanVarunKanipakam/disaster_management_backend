@@ -10,7 +10,6 @@ export default function(app) {
     // Incident Management
     adminRouter.get("/incidents", adminController.getAllIncidents);
     adminRouter.put("/incidents/:incidentId/assign", logAction('ASSIGN INCIDENT'), adminController.assignVolunteerToIncident);
-    
     // User Management
     adminRouter.get("/users", adminController.getAllUsers);
     adminRouter.put("/users/:id/role", logAction('UPDATE USER_ROLE'), adminController.updateUserRole);

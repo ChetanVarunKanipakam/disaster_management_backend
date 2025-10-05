@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
 
 export const verifyToken = (req, res, next) => {
   let token = req.headers["x-access-token"];
-
+  console.log(token);
   if (!token) {
     return res.status(403).send({ message: "No token provided!" });
   }
@@ -23,6 +23,7 @@ export const verifyToken = (req, res, next) => {
 export const isAdmin = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.userId);
+    console.log(user);
     if (user && user.role === 'ADMIN') {
       next();
       return;

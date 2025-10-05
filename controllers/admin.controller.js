@@ -8,9 +8,10 @@ const { Op } = db.Sequelize;
 // --- Incident Management ---
 
 export const getAllIncidents = async (req, res) => {
-    const { status, severity, type, limit = 20, offset = 0 } = req.query;
+    const { status, severity, type="FIRE" } = req.query;
+    const {limit = 20, offset = 0} =req.params;
     let whereClause = {};
-
+    console.log(req.query,req.params)
     if (status) whereClause.status = status;
     if (severity) whereClause.severity = severity;
     if (type) whereClause.type = type;
@@ -62,6 +63,7 @@ export const assignVolunteerToIncident = async (req, res) => {
 export const getAllUsers = async (req, res) => {
     const { role } = req.query;
     let whereClause = {};
+    console.log(req.query);
     if (role) whereClause.role = role.toUpperCase();
     
     try {
@@ -69,6 +71,7 @@ export const getAllUsers = async (req, res) => {
             where: whereClause,
             attributes: { exclude: ['password'] } 
         });
+        console.log(users);
         res.status(200).send(users);
     } catch (error) {
         res.status(500).send({ message: error.message });
