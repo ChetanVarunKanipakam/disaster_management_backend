@@ -9,4 +9,5 @@ export default function(app) {
   app.get("/api/incidents/:id", [verifyToken], controller.getIncidentDetails);
   app.get("/api/admin/incidents/:id", [verifyToken], controller.getIncidentDetails);
   app.put("/api/incidents/:id/status", [verifyToken, isVolunteer], controller.updateIncidentStatus);
+  app.put("/api/admin/incidents/:id/status", [verifyToken, isVolunteer], controller.updateIncidentStatus);
 };

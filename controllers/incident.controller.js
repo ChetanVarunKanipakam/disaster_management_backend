@@ -4,7 +4,7 @@ import db from "../models/index.js";
 const Incident = db.Incident;
 const User = db.User;
 const sequelize = db.sequelize;
-
+const Notification = db.Notification;
 // Citizen: Report a new incident
 export const createIncident = (req, res) => {
     // The photo URL will be based on where you serve the static files
@@ -26,10 +26,11 @@ export const createIncident = (req, res) => {
     })
     .then(incident => {
         // Here you would trigger a WebSocket event: incident:new
-        // console.log(incident);
+        console.log(incident);
         res.status(201).send({ message: "Incident reported successfully!", incidentId: incident.id });
     })
     .catch(err => {
+        console.log(err)
         res.status(500).send({ message: err.message });
     });
 };
@@ -113,7 +114,9 @@ export const getMyReports = async (req, res) => {
 // Volunteer: Update incident status
 export const updateIncidentStatus = async (req, res) => {
     const { status } = req.body;
-    if (!['ACKNOWLEDGED', 'IN_PROGRESS', 'RESOLVED'].includes(status)) {
+    // You might want to add 'NEW' if admins can revert it
+    const validStatuses = ['IN_PROGRESS', 'RESOLVED']; 
+    if (!validStatuses.includes(status)) {
         return res.status(400).send({ message: "Invalid status."});
     }
     
@@ -121,7 +124,7 @@ export const updateIncidentStatus = async (req, res) => {
         const incident = await Incident.findByPk(req.params.id);
         if (!incident) return res.status(404).send({ message: "Incident not found." });
 
-        // Authorization check: only assigned volunteer or admin can update
+        // Authorization check
         const user = await User.findByPk(req.userId);
         if (user.role !== 'ADMIN' && incident.assignedToId !== req.userId) {
             return res.status(403).send({ message: "You are not authorized to update this incident."});
@@ -133,7 +136,19 @@ export const updateIncidentStatus = async (req, res) => {
         }
         await incident.save();
 
-        // Here you would trigger a WebSocket event: incident:update
+        // --- NOTIFICATION LOGIC ---
+        // 3. Notify the citizen who reported the incident about the status change.
+        // Assumes your Incident model has a 'reportedById' field.
+        if (incident.reportedById && incident.reportedById !== req.userId) { // Don't notify users about their own actions
+            await Notification.create({
+                title: 'Incident Status Updated',
+                body: `The status of your reported incident "${incident.title}" has been updated to ${status}.`,
+                userId: incident.reportedById, // The recipient
+                incidentId: incident.id, // Link to the incident
+            });
+        }
+        // --- END NOTIFICATION LOGIC ---
+
         res.status(200).send({ message: `Incident status updated to ${status}` });
 
     } catch (error) {

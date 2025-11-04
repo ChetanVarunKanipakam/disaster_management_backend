@@ -3,7 +3,7 @@ const Incident = db.Incident;
 const User = db.User;
 const Volunteer = db.Volunteer;
 const { Op } = db.Sequelize;
-
+const Notification = db.Notification;
 
 // --- Incident Management ---
 
@@ -46,13 +46,21 @@ export const assignVolunteerToIncident = async (req, res) => {
         if (!volunteer) return res.status(404).send({ message: "Volunteer not found." });
 
         incident.assignedToId = volunteerId;
-        // Optionally set status to Acknowledged
-        if (incident.status === 'PENDING') {
-            incident.status = 'ACKNOWLEDGED';
+        if (incident.status === 'NEW') { // Assuming 'NEW' is the initial status
+            incident.status = 'IN_PROGRESS'; // Or ACKNOWLEDGED
         }
         await incident.save();
-        
-        // Here you trigger notifications to the volunteer
+
+        // --- NOTIFICATION LOGIC ---
+        // 2. Create a notification for the assigned volunteer.
+        await Notification.create({
+            title: 'New Assignment',
+            body: `You have been assigned to the incident: "${incident.title}".`,
+            userId: volunteer.id, // The recipient of the notification
+            incidentId: incident.id, // Link the notification to the incident
+        });
+        // --- END NOTIFICATION LOGIC ---
+
         res.status(200).send({ message: "Volunteer assigned successfully." });
     } catch (error) {
         res.status(500).send({ message: error.message });
@@ -79,20 +87,36 @@ export const getAllUsers = async (req, res) => {
 };
 
 export const updateUserRole = async (req, res) => {
-    const { id } = req.params; // Changed from body to params
+    const { id } = req.params;
     const { newRole } = req.body;
+
     try {
         const user = await User.findByPk(id);
         if (!user) return res.status(404).send({ message: "User not found." });
 
+        // Prevent changing own role if not an admin, or other security checks...
+        
+        const oldRole = user.role;
         user.role = newRole;
         await user.save();
-        // Add/remove from Volunteer table if necessary
-        if (newRole === 'VOLUNTEER' && !(await Volunteer.findByPk(userId))) {
-            await Volunteer.create({ userId: userId });
+        
+        // BUG FIX: Changed 'userId' to 'id' which is available from req.params
+        if (newRole === 'VOLUNTEER' && !(await Volunteer.findByPk(id))) {
+            await Volunteer.create({ userId: id });
         } else if (newRole !== 'VOLUNTEER') {
-            await Volunteer.destroy({ where: { userId: userId }});
+            await Volunteer.destroy({ where: { userId: id }});
         }
+
+        // --- NOTIFICATION LOGIC ---
+        // 4. If the user was promoted to a volunteer, send a welcome notification.
+        if (newRole === 'VOLUNTEER' && oldRole !== 'VOLUNTEER') {
+            await Notification.create({
+                title: 'Welcome to the Volunteer Team!',
+                body: 'Your account has been upgraded to a Volunteer role. You can now be assigned to incidents.',
+                userId: user.id, // The recipient
+            });
+        }
+        // --- END NOTIFICATION LOGIC ---
 
         res.status(200).send({ message: "User role updated." });
     } catch (error) {

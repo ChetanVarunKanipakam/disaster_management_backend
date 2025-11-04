@@ -30,7 +30,7 @@ export const signup = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    console.log(req.body);
+    // console.log(req.body);
     const user = await User.findOne({ where: { email: req.body.email } });
     
     if (!user) {
@@ -46,15 +46,18 @@ export const login = async (req, res) => {
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
       expiresIn: 86400 // 24 hours
     });
-
+    console.log(user);
     res.status(200).send({
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
+      phone:user.phone,
+      profilePictureUrl:user.profilePictureUrl,
       accessToken: token
     });
   } catch (error) {
+    console.error(error.message)
     res.status(500).send({ message: error.message });
   }
 };

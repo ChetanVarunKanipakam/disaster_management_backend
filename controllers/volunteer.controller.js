@@ -5,17 +5,33 @@ const User = db.User;
 
 // Get a volunteer's details (profile)
 export const getVolunteerDetails = async (req, res) => {
+    console.log("got till here",req.userId)
+    try {
+        const volunteer = await Volunteer.findOne({
+            where: { userId: req.userId },
+            include: { model: User, as: 'userProfile', attributes: ['name', 'email', 'phone'] }
+        });
+        if (!volunteer) return res.status(404).send({ message: "Volunteer not found." });
+        console.log(volunteer)
+        res.status(200).send(volunteer);
+    } catch (error) {
+        res.status(500).send({ message: error.message });
+    }
+};
+export const getVolunteerDetailsAdmin = async (req, res) => {
     try {
         const volunteer = await Volunteer.findOne({
             where: { userId: req.params.id },
             include: { model: User, as: 'userProfile', attributes: ['name', 'email', 'phone'] }
         });
         if (!volunteer) return res.status(404).send({ message: "Volunteer not found." });
+        console.log(volunteer)
         res.status(200).send(volunteer);
     } catch (error) {
         res.status(500).send({ message: error.message });
     }
 };
+
 
 // Update a volunteer's availability and location
 export const updateVolunteerProfile = async (req, res) => {
@@ -27,7 +43,7 @@ export const updateVolunteerProfile = async (req, res) => {
     try {
         const volunteer = await Volunteer.findByPk(req.params.id);
         if (!volunteer) return res.status(404).send({ message: "Volunteer not found." });
-
+        console.log(req.body);
         const { isAvailable, latitude, longitude } = req.body;
         let location;
         if (latitude && longitude) {
