@@ -2,7 +2,8 @@ import db from "../models/index.js";
 const Volunteer = db.Volunteer;
 const Incident = db.Incident;
 const User = db.User;
-
+import { Op } from "sequelize";
+const sequelize=db.sequelize;
 // Get a volunteer's details (profile)
 export const getVolunteerDetails = async (req, res) => {
     console.log("got till here",req.userId)
@@ -77,17 +78,58 @@ export const getAssignedIncidents = async (req, res) => {
 
 // Admin: Get all volunteers
 export const getAllVolunteers = async (req, res) => {
-    try {
-        const volunteers = await Volunteer.findAll({
-            include: {
-                model: User,
-                as: 'userProfile',
-                attributes: ['name', 'email', 'phone', 'isActive']
-            }
-        });
-        console.log(volunteers);
-        res.status(200).send(volunteers);
-    } catch (error) {
-        res.status(500).send({ message: error.message });
+    // Radius in meters (defaults to 10km)
+    const { lat, lon, radius = 10000 } = req.query;
+
+try {
+    const queryOptions = {
+        include: {
+            model: User,
+            as: 'userProfile',
+            attributes: ['name', 'email', 'phone', 'isActive']
+        },
+        // The 'where' clause is now initially empty, so it won't filter by availability.
+        where: {} 
+    };
+
+    // If latitude and longitude are provided, add the location-based filter
+    if (lat && lon) {
+        const location = sequelize.literal(`ST_GeomFromText('POINT(${lon} ${lat})')`);
+        const distance = sequelize.fn('ST_DistanceSphere', sequelize.col('lastKnownLocation'), location);
+        
+        // Add the distance condition to the where clause.
+        // This will work even if the 'where' clause was initially empty.
+        queryOptions.where[Op.and] = sequelize.where(distance, { [Op.lte]: parseInt(radius) });
+        
+        // Also, select the distance in the query result
+        queryOptions.attributes = {
+            include: [[distance, 'distance']]
+        };
+        queryOptions.order = [[distance, 'ASC']]; // Order by the nearest
     }
+
+    const volunteers = await Volunteer.findAll(queryOptions);
+
+    // console.log("volunteers:", volunteers);
+    res.status(200).send(volunteers);
+} catch (error) {
+    console.error(error.message);
+    res.status(500).send({ message: error.message });
+}
+};
+
+export const getAllVolunteers1 = async (req, res) => {
+try {
+const volunteers = await Volunteer.findAll({
+include: {
+model: User,
+as: 'userProfile',
+attributes: ['name', 'email', 'phone', 'isActive']
+}
+});
+console.log(volunteers);
+res.status(200).send(volunteers);
+} catch (error) {
+res.status(500).send({ message: error.message });
+}
 };

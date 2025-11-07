@@ -90,7 +90,6 @@ export const getIncidentDetails = async (req, res) => {
                 { model: User, as: 'assignedVolunteer', attributes: ['id', 'name'] }
             ]
         });
-        console.log(incident.dataValues);
         if (!incident) return res.status(404).send({ message: "Incident not found." });
         res.status(200).send(incident.dataValues);
     } catch (error) {

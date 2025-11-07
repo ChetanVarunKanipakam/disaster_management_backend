@@ -12,6 +12,7 @@ export default function(app) {
     app.get("/api/incidents/assigned-to/:volunteerId", [verifyToken], controller.getAssignedIncidents);
     app.get("/api/admin/incidents/assigned-to/:volunteerId", [verifyToken], controller.getAssignedIncidents);
     // Admin: Get all volunteers
+    app.get("/api/admin/volunteers1", [verifyToken, isAdmin], controller.getAllVolunteers1);
      app.get("/api/admin/volunteers/:id", [verifyToken], controller.getVolunteerDetailsAdmin);
     app.get("/api/admin/volunteers", [verifyToken, isAdmin], controller.getAllVolunteers);
 };
