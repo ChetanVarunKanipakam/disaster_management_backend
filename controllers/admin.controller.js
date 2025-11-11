@@ -8,13 +8,12 @@ const Notification = db.Notification;
 // --- Incident Management ---
 
 export const getAllIncidents = async (req, res) => {
-    const { status, severity, type="FIRE" } = req.query;
+    const { status, severity } = req.query;
     const {limit = 20, offset = 0} =req.params;
     let whereClause = {};
     console.log(req.query,req.params)
     if (status) whereClause.status = status;
     if (severity) whereClause.severity = severity;
-    if (type) whereClause.type = type;
 
     try {
         const incidents = await Incident.findAndCountAll({

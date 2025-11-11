@@ -16,7 +16,7 @@ export default (sequelize) => {
       allowNull: true,
     },
     type: {
-      type: DataTypes.ENUM('FIRE', 'MEDICAL', 'ROADBLOCK', 'COLLAPSED_BUILDING'),
+      type: DataTypes.ENUM('FIRE', 'EARTHQUAKE', 'FLOOD', 'OTHERS'),
       allowNull: false,
     },
     severity: {
