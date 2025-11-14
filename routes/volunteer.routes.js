@@ -9,6 +9,7 @@ export default function(app) {
     app.put("/api/volunteers/:id", [verifyToken], controller.updateVolunteerProfile);
 
     // Get incidents assigned to a volunteer
+    app.get("/api/incidents/assigned-pending/:volunteerId", [verifyToken], controller.getAssignedIncidentsAndPending);
     app.get("/api/incidents/assigned-to/:volunteerId", [verifyToken], controller.getAssignedIncidents);
     app.get("/api/admin/incidents/assigned-to/:volunteerId", [verifyToken], controller.getAssignedIncidents);
     // Admin: Get all volunteers

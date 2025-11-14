@@ -13,7 +13,6 @@ export const getVolunteerDetails = async (req, res) => {
             include: { model: User, as: 'userProfile', attributes: ['name', 'email', 'phone'] }
         });
         if (!volunteer) return res.status(404).send({ message: "Volunteer not found." });
-        console.log(volunteer)
         res.status(200).send(volunteer);
     } catch (error) {
         res.status(500).send({ message: error.message });
@@ -36,11 +35,9 @@ export const getVolunteerDetailsAdmin = async (req, res) => {
 
 // Update a volunteer's availability and location
 export const updateVolunteerProfile = async (req, res) => {
-    // Ensure only the volunteer themselves or an admin can update
     if (req.userId !== req.params.id && req.userRole !== 'ADMIN') {
         return res.status(403).send({ message: "Forbidden: You cannot update another volunteer's profile." });
     }
-    
     try {
         const volunteer = await Volunteer.findByPk(req.params.id);
         if (!volunteer) return res.status(404).send({ message: "Volunteer not found." });
@@ -50,13 +47,10 @@ export const updateVolunteerProfile = async (req, res) => {
         if (latitude && longitude) {
             location = { type: 'Point', coordinates: [longitude, latitude] };
         }
-
         await volunteer.update({
             isAvailable: isAvailable,
             lastKnownLocation: location,
         });
-
-        // Optional: Trigger websocket event volunteer:update
         res.status(200).send({ message: "Volunteer profile updated." });
     } catch (error) {
         res.status(500).send({ message: error.message });
@@ -64,7 +58,28 @@ export const updateVolunteerProfile = async (req, res) => {
 };
 
 // Get all incidents assigned to a specific volunteer
+
+export const getAssignedIncidentsAndPending = async (req, res) => {
+    console.log("incidents", req.params.volunteerId)
+    try {
+        const incidents = await Incident.findAll({
+            where: {
+                assignedToId: req.params.volunteerId,
+                status: 'PENDING'
+            },
+            order: [
+                ['createdAt', 'DESC']
+            ]
+        });
+        res.status(200).send(incidents);
+    } catch (error) {
+        res.status(500).send({
+            message: error.message
+        });
+    }
+};
 export const getAssignedIncidents = async (req, res) => {
+    console.log("incidents",req.params.volunteerId)
     try {
         const incidents = await Incident.findAll({
             where: { assignedToId: req.params.volunteerId },

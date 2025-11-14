@@ -37,46 +37,23 @@ export const createIncident = (req, res) => {
 
 // Citizen/Volunteer: Get nearby incidents
 export const getNearbyIncidents = async (req, res) => {
-    // const { lat, lon, radius = 10000, severity, type ,status} = req.query; // radius in meters
     const { lat, lon, radius = 10000} = req.query; 
-    // console.log(req.query);
     if (!lat || !lon) {
         return res.status(400).send({ message: "Latitude and Longitude are required."});
     }
-
     const location = sequelize.literal(`ST_GeomFromText('POINT(${lon} ${lat})')`);
     const distance = sequelize.fn('ST_DistanceSphere', sequelize.col('location'), location);
-
     const whereClause = [
         sequelize.where(distance, { [Op.lte]: parseInt(radius) })
     ];
-
-// if (status) whereClause.push({ status });
-// if (severity) whereClause.push({ severity });
-// if (type) whereClause.push({ type });
-
-
-
-
-    // if (!status) {
-    //     whereClause.status = { [Op.not]: 'RESOLVED' };
-    // } else {
-    //     whereClause.status = status;
-    // }
-
-    // if (severity) whereClause.severity = severity;
-    // if (type) whereClause.type = type;
-    
     try {
         const incidents = await Incident.findAll({
             attributes: { include: [[distance, 'distance']] },
             where: { [Op.and]: whereClause },
             order: [['createdAt', 'DESC']]
         });
-        console.log(incidents);
         res.status(200).send(incidents);
     } catch (error) {
-        // console.error("error",error);
         res.status(500).send({ message: error.message });
     }
 };
